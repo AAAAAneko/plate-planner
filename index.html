@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plate Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="实验板规划工具栏">
+        <div class="title-block">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+          <div>
+            <h1>Plate Planner</h1>
+            <p>6 孔板和 96 孔板实验设计</p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="segmented" role="group" aria-label="选择板型">
+            <button class="segmented-button is-active" data-plate="6">6 孔板</button>
+            <button class="segmented-button" data-plate="24">24 孔板</button>
+            <button class="segmented-button" data-plate="48">48 孔板</button>
+            <button class="segmented-button" data-plate="96">96 孔板</button>
+          </div>
+          <button class="icon-button" id="undoBtn" title="撤销" aria-label="撤销">
+            <span aria-hidden="true">↶</span>
+          </button>
+          <button class="icon-button" id="redoBtn" title="重做" aria-label="重做">
+            <span aria-hidden="true">↷</span>
+          </button>
+          <button class="text-button" id="exportCsvBtn">导出 CSV</button>
+          <button class="text-button" id="exportProtocolBtn">方案 CSV</button>
+          <button class="text-button" id="exportImageBtn">导出图片</button>
+          <button class="text-button" id="printPdfBtn">打印 PDF</button>
+          <button class="text-button" id="exportJsonBtn">保存设计</button>
+          <label class="text-button file-label">
+            导入设计
+            <input id="importJsonInput" type="file" accept="application/json,.json" />
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="control-panel" aria-label="实验条件设置">
+          <div class="panel-section">
+            <div class="section-heading">
+              <h2>当前条件</h2>
+              <div class="section-actions">
+                <button class="small-button" id="copyConditionBtn">复制</button>
+                <button class="small-button" id="addConditionBtn">新增</button>
+              </div>
+            </div>
+            <div class="condition-editor">
+              <label>
+                名称
+                <input id="conditionName" type="text" placeholder="例如 Drug A 10 µM / Treatment A" />
+              </label>
+              <label>
+                颜色
+                <input id="conditionColor" type="color" value="#2f7dd1" />
+              </label>
+              <label>
+                处理（可选）
+                <input id="treatmentInput" type="text" placeholder="额外处理，例如 Vehicle / Hypoxia" />
+              </label>
+              <label>
+                时间点
+                <input id="timePointInput" type="text" placeholder="例如 6 h / 24 h / 48 h" />
+              </label>
+              <label>
+                备注
+                <textarea id="noteInput" rows="3" placeholder="细胞数、时间点、检测方法等"></textarea>
+              </label>
+            </div>
+            <div class="condition-list" id="conditionList" aria-label="条件列表"></div>
+          </div>
+
+          <div class="panel-section">
+            <h2>快速填充</h2>
+            <div class="fill-grid">
+              <button class="small-button" data-fill="selected">填入选中孔</button>
+              <button class="small-button" data-fill="row">填整行</button>
+              <button class="small-button" data-fill="column">填整列</button>
+              <div class="repeat-fill">
+                <button class="small-button" data-fill="replicates">连续重复</button>
+                <label aria-label="重复孔数量">
+                  <span>×</span>
+                  <input id="replicateCount" type="number" min="1" max="96" value="3" />
+                </label>
+              </div>
+              <button class="small-button danger" id="clearSelectedBtn">清空选中</button>
+              <button class="small-button danger" id="clearPlateBtn">清空整板</button>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2>实验信息</h2>
+            <label>
+              项目名
+              <input id="projectName" type="text" placeholder="例如 dose response / time course" />
+            </label>
+            <label>
+              日期
+              <input id="experimentDate" type="date" />
+            </label>
+            <label>
+              全局备注
+              <textarea id="globalNotes" rows="4" placeholder="批次、细胞系、培养基、关键变量等"></textarea>
+            </label>
+          </div>
+          <div class="tool-credit">Made by Aneko</div>
+        </aside>
+
+        <section class="plate-area" aria-label="孔板布局">
+          <div class="plate-header">
+            <div>
+              <h2 id="plateTitle">6 孔板</h2>
+              <p id="selectedWellText">未选择孔</p>
+            </div>
+            <div class="view-options">
+              <label>
+                <input id="showLabelsToggle" type="checkbox" checked />
+                显示条件名
+              </label>
+              <label class="compact-option">
+                <input id="compactToggle" type="checkbox" />
+                紧凑显示
+              </label>
+            </div>
+          </div>
+          <div class="plate-wrap">
+            <div class="plate-grid plate-6" id="plateGrid" aria-label="孔板"></div>
+          </div>
+          <div class="summary-bar" id="summaryBar"></div>
+        </section>
+      </section>
+    </main>
+
+    <template id="wellTemplate">
+      <button class="well" type="button">
+        <span class="well-id"></span>
+        <span class="well-name"></span>
+        <span class="well-time"></span>
+        <span class="well-treatment"></span>
+      </button>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
