@@ -392,15 +392,30 @@ function wrapCanvasText(ctx, text, width) {
 
 function layoutCanvasLegend(ctx, width) {
   ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  const compact = document.querySelector("#exportLegendLayout").value === "compact";
   let offset = 28;
+  let left = 0;
+  let rowHeight = 0;
   const items = getPlateGroups().map((group) => {
     const text = `${group.label}: ${group.wells.length} 孔 (${formatWellRanges(group.wells)})`;
     const lines = wrapCanvasText(ctx, text, width - 20);
-    const item = { group, lines, offset };
-    offset += lines.length * 18 + 10;
+    const itemWidth = Math.min(width, Math.max(...lines.map((line) => ctx.measureText(line).width)) + 20);
+    const itemHeight = lines.length * 18 + 10;
+    if (compact && left > 0 && left + itemWidth > width) {
+      offset += rowHeight;
+      left = 0;
+      rowHeight = 0;
+    }
+    const item = { group, lines, offset, left };
+    if (compact) {
+      left += itemWidth + 18;
+      rowHeight = Math.max(rowHeight, itemHeight);
+    } else {
+      offset += itemHeight;
+    }
     return item;
   });
-  return { items, height: offset };
+  return { items, height: offset + rowHeight };
 }
 
 function drawCanvasLegend(ctx, x, y, legend) {
@@ -408,15 +423,16 @@ function drawCanvasLegend(ctx, x, y, legend) {
   ctx.textAlign = "left";
   ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.fillText(`已填孔 ${Object.keys(state.plates[state.plateType]).length}/${getWells().length}`, x, y);
-  legend.items.forEach(({ group, lines, offset }) => {
+  legend.items.forEach(({ group, lines, offset, left }) => {
+    const cursorX = x + left;
     const cursorY = y + offset;
     ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
     ctx.fillStyle = group.color;
-    ctx.fillRect(x, cursorY - 10, 12, 12);
+    ctx.fillRect(cursorX, cursorY - 10, 12, 12);
     ctx.strokeStyle = "#c8d2df";
-    ctx.strokeRect(x, cursorY - 10, 12, 12);
+    ctx.strokeRect(cursorX, cursorY - 10, 12, 12);
     ctx.fillStyle = "#17202b";
-    lines.forEach((line, index) => ctx.fillText(line, x + 20, cursorY + index * 18));
+    lines.forEach((line, index) => ctx.fillText(line, cursorX + 20, cursorY + index * 18));
   });
 }
 
