@@ -281,13 +281,22 @@ function renderPlateCanvas(scale = 2) {
   const axis = showAxis ? 28 : 0;
   const margin = 34;
   const header = 74;
-  const legendHeight = 78;
   const width = margin * 2 + axis + cols * cell + (cols - 1) * gap;
-  const height = margin * 2 + header + axis + rows * cell + (rows - 1) * gap + legendHeight;
   const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const contentWidth = width - margin * 2;
+  const legend = layoutCanvasLegend(ctx, contentWidth);
+  const notes = document.querySelector("#exportNotesToggle").checked
+    ? String(state.globalNotes || "").trim() : "";
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  const noteLines = notes ? wrapCanvasText(ctx, notes, contentWidth) : [];
+  const legendY = margin + header + axis + rows * cell + (rows - 1) * gap + 34;
+  const notesY = legendY + legend.height + 24;
+  const height = noteLines.length
+    ? notesY + 28 + noteLines.length * 20 + margin
+    : legendY + legend.height + margin;
   canvas.width = width * scale;
   canvas.height = height * scale;
-  const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
 
   ctx.fillStyle = "#ffffff";
@@ -327,7 +336,15 @@ function renderPlateCanvas(scale = 2) {
     }
   });
 
-  drawCanvasLegend(ctx, margin, height - legendHeight + 20, width - margin * 2);
+  drawCanvasLegend(ctx, margin, legendY, legend);
+  if (noteLines.length) {
+    ctx.fillStyle = "#647084";
+    ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.fillText("全局备注", margin, notesY);
+    ctx.fillStyle = "#17202b";
+    ctx.font = "13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    noteLines.forEach((line, index) => ctx.fillText(line, margin, notesY + 28 + index * 20));
+  }
   return canvas;
 }
 
@@ -357,29 +374,49 @@ function drawCanvasWell(ctx, x, y, size, wellId, data) {
   ctx.restore();
 }
 
-function drawCanvasLegend(ctx, x, y, width) {
-  const groups = getPlateGroups();
+function wrapCanvasText(ctx, text, width) {
+  const lines = [];
+  String(text).split(/\r\n|\r|\n/).forEach((paragraph) => {
+    let line = "";
+    for (const character of paragraph) {
+      if (line && ctx.measureText(line + character).width > width) {
+        lines.push(line);
+        line = "";
+      }
+      line += character;
+    }
+    lines.push(line);
+  });
+  return lines;
+}
+
+function layoutCanvasLegend(ctx, width) {
+  ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  let offset = 28;
+  const items = getPlateGroups().map((group) => {
+    const text = `${group.label}: ${group.wells.length} 孔 (${formatWellRanges(group.wells)})`;
+    const lines = wrapCanvasText(ctx, text, width - 20);
+    const item = { group, lines, offset };
+    offset += lines.length * 18 + 10;
+    return item;
+  });
+  return { items, height: offset };
+}
+
+function drawCanvasLegend(ctx, x, y, legend) {
   ctx.fillStyle = "#647084";
   ctx.textAlign = "left";
   ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.fillText(`已填孔 ${Object.keys(state.plates[state.plateType]).length}/${getWells().length}`, x, y);
-  let cursorX = x;
-  let cursorY = y + 28;
-  groups.forEach((group) => {
-    const text = `${group.label}: ${group.wells.length} 孔 (${formatWellRanges(group.wells)})`;
+  legend.items.forEach(({ group, lines, offset }) => {
+    const cursorY = y + offset;
     ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-    const itemWidth = Math.min(ctx.measureText(text).width + 34, width);
-    if (cursorX + itemWidth > x + width) {
-      cursorX = x;
-      cursorY += 24;
-    }
     ctx.fillStyle = group.color;
-    ctx.fillRect(cursorX, cursorY - 10, 12, 12);
+    ctx.fillRect(x, cursorY - 10, 12, 12);
     ctx.strokeStyle = "#c8d2df";
-    ctx.strokeRect(cursorX, cursorY - 10, 12, 12);
+    ctx.strokeRect(x, cursorY - 10, 12, 12);
     ctx.fillStyle = "#17202b";
-    ctx.fillText(truncateText(ctx, text, itemWidth - 22), cursorX + 20, cursorY);
-    cursorX += itemWidth + 12;
+    lines.forEach((line, index) => ctx.fillText(line, x + 20, cursorY + index * 18));
   });
 }
 

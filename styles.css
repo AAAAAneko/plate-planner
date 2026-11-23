@@ -311,6 +311,18 @@ input[type="color"] {
   overflow: hidden;
 }
 
+.export-notes-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-notes-option input {
+  width: 16px;
+  min-height: 16px;
+  flex: 0 0 16px;
+}
+
 input[type="checkbox"] {
   accent-color: var(--accent);
 }
