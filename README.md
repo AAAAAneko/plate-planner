@@ -13,7 +13,7 @@ A simple browser-based plate layout planner for 6-well, 24-well, 48-well, and 96
 
 ## Usage
 
-Open `index.html` in a browser, or use the GitHub Pages link if available.
+[Open the web app](https://aaaaaneko.github.io/plate-planner/), or download and unzip the project and open `index.html` in a browser.
 
 ## Files
 
@@ -42,7 +42,7 @@ Aneko
 
 ## 使用方法
 
-直接用浏览器打开 `index.html`，或使用 GitHub Pages 网页链接。
+[打开网页版](https://aaaaaneko.github.io/plate-planner/)。离线使用时，下载并解压项目，再用浏览器打开 `index.html`。
 
 ## 文件
 
